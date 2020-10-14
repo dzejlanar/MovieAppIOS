@@ -19,6 +19,7 @@ class SecondScreenController: UITableViewController {
     var totalPages = 0
     var currentPage = 1
     var query: String = ""
+    var indicator = UIActivityIndicatorView()
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -31,6 +32,13 @@ class SecondScreenController: UITableViewController {
     }
 
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        if indexPath.row == movies.count - 1{
+            if(currentPage < totalPages){
+                currentPage = currentPage + 1
+                APICall(query: query, page: currentPage)
+            }
+        }
+        
         let cell = tableView.dequeueReusableCell(withIdentifier: "movieCell", for: indexPath) as! MovieListCell
         
         if movies[indexPath.row].poster_path != nil {
@@ -53,4 +61,20 @@ class SecondScreenController: UITableViewController {
         tableView.deselectRow(at: indexPath, animated: true)
     }
 
+    func APICall(query: String, page: Int){
+        let movieRequest = MovieRequest(query: query, page: page)
+        movieRequest.getMovies{ [weak self] result in
+            switch result{
+            case .failure(let error):
+                print(error)
+            case .success(let movies):
+                DispatchQueue.main.async {
+                    if(movies.total_results > 0){
+                        self?.movies.append(contentsOf: movies.results)
+                        self?.tableView.reloadData()
+                    }
+                }
+            }
+        }
+    }
 }
